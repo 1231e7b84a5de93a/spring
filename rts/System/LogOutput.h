@@ -256,6 +256,8 @@ private:
 	// output thread's main loop
 	void FlushOutputThreadLoop();
 	void FlushOutput();
+	// signal quit
+	bool flushedOutputQuit;
 	// mutex to synchronize access to output buffer list
 	boost::mutex flushedOutputMutex;
 	// construct frame prefix for ToFile, call by sim thread

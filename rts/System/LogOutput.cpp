@@ -92,6 +92,7 @@ CLogOutput::CLogOutput()
 	, filePath("")
 	, subscribersEnabled(true)
 	, flushedOutputThread(NULL)
+	, flushedOutputQuit(false)
 {
 	// multiple infologs can't exist together!
 	assert(this == &logOutput);
@@ -124,7 +125,7 @@ CLogOutput::CLogOutput()
 CLogOutput::~CLogOutput()
 {
 	if (flushedOutputThread) {
-		flushedOutputThread->interrupt();
+		flushedOutputQuit = true;
 		flushedOutputThread->join();
 		delete flushedOutputThread;
 		flushedOutputThread = NULL;
@@ -338,34 +339,34 @@ void CLogOutput::Output(const CLogSubsystem& subsystem, const std::string& str)
 // prelog still flushed by sim thread
 void CLogOutput::FlushOutputThreadLoop()
 {
-	try {
-		do {
-			boost::this_thread::sleep(boost::posix_time::millisec(100)); // sleep
-			FlushOutput();
-		} while(true);
-	} catch(boost::thread_interrupted const&) {
-		// let's stop
+	do {
+		boost::this_thread::sleep(boost::posix_time::millisec(100)); // sleep
 		FlushOutput();
-	}
-
+		if (flushedOutputQuit) {
+			break;
+		}
+	} while(true);
 }
 
 void CLogOutput::FlushOutput()
 {
-	do{
-		FlushedOutput* fo;
+	do {
 		bool empty = true;
 
 		// minimize lock time
 		{
 			boost::mutex::scoped_lock lock(flushedOutputMutex);
-			fo = &(flushedOutput.front());
 			empty = flushedOutput.empty();
 		}
 
 		if (empty) {
 			break;
 		} else {
+			FlushedOutput* fo;
+			{
+				boost::mutex::scoped_lock lock(flushedOutputMutex);
+				fo = &(flushedOutput.front());
+			}
 			// actual output
 			if (filelog) {
 				ToFile(fo->subsystem, fo->str, fo->framePrefix);
@@ -376,7 +377,7 @@ void CLogOutput::FlushOutput()
 			flushedOutput.pop_front();
 
 		}
-	}while(true);
+	} while(true);
 }
 
 std::string CLogOutput::GetFramePrefix()
