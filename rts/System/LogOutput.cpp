@@ -91,6 +91,7 @@ CLogOutput::CLogOutput()
 	: fileName("")
 	, filePath("")
 	, subscribersEnabled(true)
+	, flushedOutputThread(NULL)
 {
 	// multiple infologs can't exist together!
 	assert(this == &logOutput);
@@ -115,11 +116,19 @@ CLogOutput::CLogOutput()
 #endif
 	}
 	SetLogFileRotating(doRotateLogFiles);
+
+	flushedOutputThread = new boost::thread(boost::bind(&CLogOutput::FlushOutputThreadLoop, this));
 }
 
 
 CLogOutput::~CLogOutput()
 {
+	if (flushedOutputThread) {
+		flushedOutputThread->interrupt();
+		flushedOutputThread->join();
+		delete flushedOutputThread;
+		flushedOutputThread = NULL;
+	}
 	End();
 }
 
@@ -226,7 +235,7 @@ void CLogOutput::Initialize()
 			}
 		}
 		if (filelog) {
-			ToFile(*it->subsystem, it->text);
+			ToFile(*it->subsystem, it->text, GetFramePrefix());
 		}
 	}
 	preInitLog().clear();
@@ -319,12 +328,66 @@ void CLogOutput::Output(const CLogSubsystem& subsystem, const std::string& str)
 	}
 #endif // _MSC_VER
 
+	// flushed output is not done by sim thread
+	// buffer it and let output thread handle it
+	boost::mutex::scoped_lock lock(flushedOutputMutex);
+	flushedOutput.push_back(FlushedOutput(subsystem, str, GetFramePrefix()));
+}
 
-	if (filelog) {
-		ToFile(subsystem, str);
+// loop for output thread
+// prelog still flushed by sim thread
+void CLogOutput::FlushOutputThreadLoop()
+{
+	try {
+		do {
+			boost::this_thread::sleep(boost::posix_time::millisec(100)); // sleep
+			FlushOutput();
+		} while(true);
+	} catch(boost::thread_interrupted const&) {
+		// let's stop
+		FlushOutput();
 	}
 
-	ToStdout(subsystem, str);
+}
+
+void CLogOutput::FlushOutput()
+{
+	do{
+		FlushedOutput* fo;
+		bool empty = true;
+
+		// minimize lock time
+		{
+			boost::mutex::scoped_lock lock(flushedOutputMutex);
+			fo = &(flushedOutput.front());
+			empty = flushedOutput.empty();
+		}
+
+		if (empty) {
+			break;
+		} else {
+			// actual output
+			if (filelog) {
+				ToFile(fo->subsystem, fo->str, fo->framePrefix);
+			}
+			ToStdout(fo->subsystem, fo->str);
+			// clean up
+			boost::mutex::scoped_lock lock(flushedOutputMutex);
+			flushedOutput.pop_front();
+
+		}
+	}while(true);
+}
+
+std::string CLogOutput::GetFramePrefix()
+{
+	std::string framePrefix = "";
+#if !defined UNITSYNC && !defined DEDICATED
+	if (gs) {
+		framePrefix = IntToString(gs->frameNum, "[%7d] ");
+	}
+#endif
+	return framePrefix;
 }
 
 
@@ -436,15 +499,15 @@ void CLogOutput::ToStdout(const CLogSubsystem& subsystem, const std::string mess
 		std::cout.flush();
 }
 
-void CLogOutput::ToFile(const CLogSubsystem& subsystem, const std::string message)
+void CLogOutput::ToFile(const CLogSubsystem& subsystem, const std::string message, const std::string framePrefix)
 {
 	if (message.empty())
 		return;
 	const bool newline = (message.at(message.size() -1) != '\n');
 
 #if !defined UNITSYNC && !defined DEDICATED
-	if (gs) {
-		(*filelog) << IntToString(gs->frameNum, "[%7d] ");
+	if (!(framePrefix.empty())) {
+		(*filelog) << framePrefix;
 	}
 #endif
 	if (subsystem.name && *subsystem.name)

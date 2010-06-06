@@ -6,7 +6,11 @@
 #include <stdarg.h>
 #include <string>
 #include <vector>
+#include <deque>
 #include <sstream>
+
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 // format string error checking
 #ifdef __GNUC__
@@ -90,6 +94,17 @@ public:
 	virtual void SetLastMsgPos(const float3& pos) {}
 };
 
+/** @brief buffer element used for output thread*/
+class FlushedOutput
+{
+public:
+	FlushedOutput(const CLogSubsystem& sub, const std::string text, const std::string prefix)
+		: str(text), subsystem(sub), framePrefix(prefix) {}
+
+	const std::string str;
+	const std::string framePrefix;
+	const CLogSubsystem& subsystem;
+};
 
 /**
  * @brief logging class 
@@ -194,7 +209,7 @@ protected:
 	void Output(const CLogSubsystem& subsystem, const std::string& str);
 
 	void ToStdout(const CLogSubsystem& subsystem, const std::string message);
-	void ToFile(const CLogSubsystem& subsystem, const std::string message);
+	void ToFile(const CLogSubsystem& subsystem, const std::string message, const std::string framePrefix);
 
 private:
 	/**
@@ -227,12 +242,25 @@ private:
 	 */
 	void RotateLogFile() const;
 
-
 	std::vector<ILogSubscriber*> subscribers;
 	std::string fileName;
 	std::string filePath;
 	bool rotateLogFiles;
 	bool subscribersEnabled;
+
+	// buffer output list
+	// sim thread adds at end, output thread reads at front
+	std::deque<FlushedOutput> flushedOutput;
+	// output thread
+	boost::thread* flushedOutputThread;
+	// output thread's main loop
+	void FlushOutputThreadLoop();
+	void FlushOutput();
+	// mutex to synchronize access to output buffer list
+	boost::mutex flushedOutputMutex;
+	// construct frame prefix for ToFile, call by sim thread
+	// log thread works asynchron, e.g. frame number might already have changed
+	std::string GetFramePrefix();
 };
 
 
