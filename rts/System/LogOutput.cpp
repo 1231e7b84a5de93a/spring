@@ -432,8 +432,6 @@ void CLogOutput::ToStdout(const CLogSubsystem& subsystem, const std::string mess
 	std::cout << message;
 	if (newline)
 		std::cout << std::endl;
-	else
-		std::cout.flush();
 }
 
 void CLogOutput::ToFile(const CLogSubsystem& subsystem, const std::string message)
@@ -452,6 +450,4 @@ void CLogOutput::ToFile(const CLogSubsystem& subsystem, const std::string messag
 	(*filelog) << message;
 	if (newline)
 		(*filelog) << std::endl;
-	else
-		filelog->flush();
 }
