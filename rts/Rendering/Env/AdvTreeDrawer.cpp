@@ -458,7 +458,7 @@ void CAdvTreeDrawer::Draw(float treeDistance, bool drawReflection)
 
 		if (globalRendering->haveGLSL) {
 			treeShader->SetUniformMatrix4fv(7, false, &shadowHandler->shadowMatrix.m[0]);
-      const float x = shadowHandler->GetShadowParams().x;
+      float x = shadowHandler->GetShadowParams().x;
       treeShader->SetUniform4fv(8, const_cast<float*>(&(x)));
 		} else {
 			treeShader->SetUniformTarget(GL_FRAGMENT_PROGRAM_ARB);
@@ -502,7 +502,7 @@ void CAdvTreeDrawer::Draw(float treeDistance, bool drawReflection)
 
 			if (globalRendering->haveGLSL) {
 				treeShader->SetUniformMatrix4fv(7, false, &shadowHandler->shadowMatrix.m[0]);
-        const float x = shadowHandler->GetShadowParams().x;
+        float x = shadowHandler->GetShadowParams().x;
         treeShader->SetUniform4fv(8, const_cast<float*>(&(x)));
 			}
 

@@ -379,7 +379,7 @@ void LuaMaterial::Execute(const LuaMaterial& prev) const
 	}
 
 	if (shadowParamsLoc >= 0) {
-    const float x = shadowHandler->GetShadowParams().x;
+    float x = shadowHandler->GetShadowParams().x;
     glUniform4fv(shadowParamsLoc, 1, const_cast<float*>(&x));
 	}
 

@@ -1342,7 +1342,7 @@ void CBFGroundDrawer::SetupTextureUnits(bool drawReflection)
 			smfShaderGLSL->Enable();
 			smfShaderGLSL->SetUniform3fv(10, &camera->pos[0]);
 			smfShaderGLSL->SetUniformMatrix4fv(12, false, &shadowHandler->shadowMatrix.m[0]);
-      const float x = shadowHandler->GetShadowParams().x;
+      float x = shadowHandler->GetShadowParams().x;
       smfShaderGLSL->SetUniform4fv(13, const_cast<float*>(&(x)));
 
 			glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, map->GetNormalsTexture());
