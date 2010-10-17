@@ -485,7 +485,8 @@ void CGrassDrawer::Draw(void)
 
 		if (globalRendering->haveGLSL) {
 			grassShader->SetUniformMatrix4fv(6, false, &shadowHandler->shadowMatrix.m[0]);
-			grassShader->SetUniform4fv(7, const_cast<float*>(&(shadowHandler->GetShadowParams().x)));
+      const float x = shadowHandler->GetShadowParams().x;
+      grassShader->SetUniform4fv(7, const_cast<float*>(&(x)));
 			grassShader->SetUniform1f(8, gs->frameNum);
 			grassShader->SetUniform3fv(9, const_cast<float*>(&(windSpeed.x)));
 		} else {
@@ -585,7 +586,8 @@ void CGrassDrawer::Draw(void)
 
 		if (globalRendering->haveGLSL) {
 			grassShader->SetUniformMatrix4fv(6, false, &shadowHandler->shadowMatrix.m[0]);
-			grassShader->SetUniform4fv(7, const_cast<float*>(&(shadowHandler->GetShadowParams().x)));
+      const float x = shadowHandler->GetShadowParams().x;
+      grassShader->SetUniform4fv(7, const_cast<float*>(&(x)));
 			grassShader->SetUniform1f(8, gs->frameNum);
 			grassShader->SetUniform3fv(9, const_cast<float*>(&(windSpeed.x)));
 		}
