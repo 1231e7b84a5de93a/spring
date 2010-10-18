@@ -1342,8 +1342,8 @@ void CBFGroundDrawer::SetupTextureUnits(bool drawReflection)
 			smfShaderGLSL->Enable();
 			smfShaderGLSL->SetUniform3fv(10, &camera->pos[0]);
 			smfShaderGLSL->SetUniformMatrix4fv(12, false, &shadowHandler->shadowMatrix.m[0]);
-      float x = shadowHandler->GetShadowParams().x;
-      smfShaderGLSL->SetUniform4fv(13, const_cast<float*>(&(x)));
+      float4 x = shadowHandler->GetShadowParams();
+      smfShaderGLSL->SetUniform4fv(13, &(x.x));
 
 			glActiveTexture(GL_TEXTURE5); glBindTexture(GL_TEXTURE_2D, map->GetNormalsTexture());
 			glActiveTexture(GL_TEXTURE6); glBindTexture(GL_TEXTURE_2D, map->GetSpecularTexture());
