@@ -247,3 +247,5 @@ Add_Subdirectory(cont)
 # As rts/builds/* depends on most other stuff, we add this one as last
 Add_Subdirectory(rts)
 
+ENABLE_TESTING()
+Add_Subdirectory(test)
