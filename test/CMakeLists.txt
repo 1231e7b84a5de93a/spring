@@ -39,4 +39,9 @@ ADD_EXECUTABLE(test_UDPListener ${test_UDPListener_src})
 TARGET_LINK_LIBRARIES(test_UDPListener ${SDL_LIBRARY})
 TARGET_LINK_LIBRARIES(test_UDPListener ${Boost_REGEX_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_SIGNALS_LIBRARY} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
 
+list(APPEND test_bitops_src "${CMAKE_CURRENT_SOURCE_DIR}/engine/System/Testbitops.cpp")
+ADD_EXECUTABLE(test_bitops ${test_bitops_src})
+TARGET_LINK_LIBRARIES(test_bitops ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
 ADD_TEST(NAME testUDPListener COMMAND test_UDPListener)
+ADD_TEST(NAME testbitops COMMAND test_bitops)
