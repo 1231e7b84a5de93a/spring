@@ -64,6 +64,7 @@
 #include "Sim/Weapons/PlasmaRepulser.h"
 #include "Sim/Weapons/Weapon.h"
 #include "Sim/Weapons/WeaponDefHandler.h"
+#include "System/NetProtocol.h"
 #include "myMath.h"
 #include "LogOutput.h"
 
@@ -137,6 +138,8 @@ bool LuaSyncedCtrl::PushEntries(lua_State* L)
 	REGISTER_LUA_CFUNC(CreateFeature);
 	REGISTER_LUA_CFUNC(DestroyFeature);
 	REGISTER_LUA_CFUNC(TransferFeature);
+
+	REGISTER_LUA_CFUNC(ChangeTeam);
 
 	REGISTER_LUA_CFUNC(SetUnitCosts);
 	REGISTER_LUA_CFUNC(SetUnitResourcing);
@@ -2313,6 +2316,19 @@ int LuaSyncedCtrl::TransferFeature(lua_State* L)
 	return 0;
 }
 
+
+int LuaSyncedCtrl::ChangeTeam(lua_State* L)
+{
+	CheckAllowGameChanges(L);
+	const int player = luaL_checkint(L,  1);
+	const int team = luaL_checkint(L,  2);
+
+	if (teamHandler->IsValidTeam(team)) {
+		net->Send(CBaseNetProtocol::Get().SendJoinTeam(player, team));
+	}
+
+	return 0;
+}
 
 int LuaSyncedCtrl::SetFeatureAlwaysVisible(lua_State* L)
 {
